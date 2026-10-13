@@ -10,53 +10,50 @@ namespace engine {
             while (iter != bids_.end() && iter->price >= order.price) {
                 ++iter;
             }
-            bids_.insert(iter, order);
+            std::list<Order>::iterator inserted_iter = bids_.insert(iter, order);
+            order_map_[order.id] = inserted_iter;
         } else {
             std::list<Order>::iterator iter = asks_.begin();
             while (iter != asks_.end() && iter->price <= order.price) {
                 ++iter;
             }
-            asks_.insert(iter, order);
+            std::list<Order>::iterator inserted_iter = asks_.insert(iter, order);
+            order_map_[order.id] = inserted_iter;
         }
     }
 
     bool OrderBook::cancel_order(uint64_t order_id) {
-        for (std::list<Order>::iterator iter = bids_.begin(); iter != bids_.end(); ++iter) {
-            if (iter->id == order_id) {
-                bids_.erase(iter);
-                return true;
-            }
-        }
-        
-        for (std::list<Order>::iterator iter = asks_.begin(); iter != asks_.end(); ++iter) {
-            if (iter->id == order_id) {
-                asks_.erase(iter);
-                return true;
-            }
+        auto map_iter = order_map_.find(order_id);
+        if (map_iter == order_map_.end()) {
+            return false;
         }
 
-        return false;
+        auto list_iter = map_iter->second;
+        if (list_iter->side == Side::Buy) {
+            bids_.erase(list_iter);
+        } else {
+            asks_.erase(list_iter);
+        }
+
+        order_map_.erase(map_iter);
+
+        return true;
     }
 
     bool OrderBook::modify_order(uint64_t order_id, uint64_t new_price, uint64_t new_qty) {
-        for (std::list<Order>::iterator iter = bids_.begin(); iter != bids_.end(); ++iter) {
-            if (iter->id == order_id) {
-                Order updated_order{order_id, new_price, new_qty, iter->side, iter->orderType};
-                bids_.erase(iter);
-                add_order(updated_order);
-                return true;
-            }
-        }
-        
-        for (std::list<Order>::iterator iter = asks_.begin(); iter != asks_.end(); ++iter) {
-            if (iter->id == order_id) {
-                Order updated_order{order_id, new_price, new_qty, iter->side, iter->orderType};
-                asks_.erase(iter);
-                add_order(updated_order);
-                return true;
-            }
+        auto map_iter = order_map_.find(order_id);
+        if (map_iter == order_map_.end()) {
+            return false;
         }
 
-        return false;
+        Side side = map_iter->second->side;
+        OrderType orderType = map_iter->second->orderType;
+
+        cancel_order(order_id);
+
+        Order updatedOrder{order_id, new_price, new_qty, side, orderType};
+        add_order(updatedOrder);
+
+        return true;
     }
 }

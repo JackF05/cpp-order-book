@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <list>
+#include <unordered_map>
 #include "engine/order.hpp"
 
 namespace engine {
@@ -19,5 +20,6 @@ namespace engine {
         private:
             std::list<Order> bids_;
             std::list<Order> asks_;
+            std::unordered_map<uint64_t, std::list<Order>::iterator> order_map_;
     };
 }
