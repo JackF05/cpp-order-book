@@ -1,5 +1,6 @@
 add_executable(engine_tests
     test_order.cpp
+    test_engine_order.cpp
 )
 
 target_link_libraries(engine_tests PRIVATE
