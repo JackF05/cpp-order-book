@@ -1,25 +1,60 @@
 #include "engine/order_book.hpp"
-#include "engine/order.hpp"
-
-#include <list>
 
 namespace engine {
-    void OrderBook::add_order(const Order& order) {
+    std::vector<Trade> OrderBook::add_order(Order order) {
+        std::vector<Trade> trades;
+
         if (order.side == Side::Buy) {
-            std::list<Order>::iterator iter = bids_.begin();
-            while (iter != bids_.end() && iter->price >= order.price) {
-                ++iter;
+            while (!asks_.empty() && order.quantity > 0 && order.price >= asks_.front().price) {
+                Order& maker = asks_.front();
+                uint64_t trade_qty = std::min(maker.quantity, order.quantity);
+
+                trades.push_back(Trade{maker.id, order.id, trade_qty, maker.price});
+
+                order.quantity -= trade_qty;
+                maker.quantity -= trade_qty;
+
+                if (maker.quantity == 0) {
+                    order_map_.erase(maker.id);
+                    asks_.pop_front();
+                }
             }
-            std::list<Order>::iterator inserted_iter = bids_.insert(iter, order);
-            order_map_[order.id] = inserted_iter;
+
+            if (order.quantity > 0) {
+                std::list<Order>::iterator iter = bids_.begin();
+                while (iter != bids_.end() && iter->price >= order.price) {
+                    ++iter;
+                }
+                std::list<Order>::iterator inserted_iter = bids_.insert(iter, order);
+                order_map_[order.id] = inserted_iter;
+            }
         } else {
-            std::list<Order>::iterator iter = asks_.begin();
-            while (iter != asks_.end() && iter->price <= order.price) {
-                ++iter;
+            while (!bids_.empty() && order.quantity > 0 && order.price <= bids_.front().price) {
+                Order& maker = bids_.front();
+                uint64_t trade_qty = std::min(maker.quantity, order.quantity);
+
+                trades.push_back(Trade{maker.id, order.id, trade_qty, maker.price});
+
+                order.quantity -= trade_qty;
+                maker.quantity -= trade_qty;
+
+                if (maker.quantity == 0) {
+                    order_map_.erase(maker.id);
+                    bids_.pop_front();
+                }
             }
-            std::list<Order>::iterator inserted_iter = asks_.insert(iter, order);
-            order_map_[order.id] = inserted_iter;
+
+            if (order.quantity > 0) {
+                std::list<Order>::iterator iter = asks_.begin();
+                while (iter != asks_.end() && iter->price <= order.price) {
+                    ++iter;
+                }
+                std::list<Order>::iterator inserted_iter = asks_.insert(iter, order);
+                order_map_[order.id] = inserted_iter;
+            }
         }
+
+        return trades;
     }
 
     bool OrderBook::cancel_order(uint64_t order_id) {

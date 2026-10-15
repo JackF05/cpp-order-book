@@ -3,7 +3,9 @@
 #include <cstdint>
 #include <list>
 #include <unordered_map>
+#include <vector>
 #include "engine/order.hpp"
+#include "engine/trade.hpp"
 
 namespace engine {
     class OrderBook {
@@ -13,7 +15,7 @@ namespace engine {
             const std::list<Order>& get_bids() const {return bids_;}
             const std::list<Order>& get_asks() const {return asks_;}
 
-            void add_order(const Order& order);
+            std::vector<Trade> add_order(Order order);
             bool cancel_order(uint64_t order_id);
             bool modify_order(uint64_t order_id, uint64_t new_price, uint64_t new_qty);
 

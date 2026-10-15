@@ -143,3 +143,40 @@ TEST(OrderBookTest, FailedModifyDoesNotChangeBook) {
     EXPECT_EQ(book.get_bids().front().id, order1.id);
     EXPECT_EQ(book.get_bids().back().id, order2.id);
 }
+
+TEST(OrderBookTest, PartialFillTrade) {
+    OrderBook book;
+    Order maker{1, 10, 20, Side::Buy, OrderType::Limit};
+    Order taker{2, 5, 15, Side::Sell, OrderType::Limit};
+
+    auto empty_trades = book.add_order(maker);
+    auto placed_trades = book.add_order(taker);
+
+    ASSERT_EQ(empty_trades.size(), 0);
+    ASSERT_EQ(placed_trades.size(), 1);
+    ASSERT_EQ(book.get_bids().size(), 1);
+    ASSERT_EQ(book.get_asks().size(), 0);
+}
+
+TEST(OrderBookTest, MultiLevelSweepWithResidualRest) {
+    OrderBook book;
+    Order maker1{1, 10, 5, Side::Buy, OrderType::Limit};
+    Order maker2{2, 12, 10, Side::Buy, OrderType::Limit};
+    Order taker{3, 8, 20, Side::Sell, OrderType::Limit};
+
+    auto empty_trades1 = book.add_order(maker1);
+    auto empty_trades2 = book.add_order(maker2);
+    auto placed_trades = book.add_order(taker);
+
+    ASSERT_EQ(empty_trades1.size(), 0);
+    ASSERT_EQ(empty_trades2.size(), 0);
+    ASSERT_EQ(placed_trades.size(), 2);
+    ASSERT_EQ(book.get_bids().size(), 0);
+    ASSERT_EQ(book.get_asks().size(), 1);
+
+    ASSERT_EQ(placed_trades[0].price, 12);
+    ASSERT_EQ(placed_trades[0].quantity, 10);
+    
+    ASSERT_EQ(placed_trades[1].price, 10);
+    ASSERT_EQ(placed_trades[1].quantity, 5);
+}
