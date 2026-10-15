@@ -5,6 +5,7 @@ add_executable(engine_tests
 
 add_executable(io_tests
     test_order_parser.cpp
+    test_formatter.cpp
 )
 
 target_link_libraries(engine_tests PRIVATE

@@ -1,4 +1,5 @@
 add_library(io
+    src/formatter.cpp
     src/order_parser.cpp
 )
 
