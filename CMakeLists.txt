@@ -14,7 +14,8 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 
 add_subdirectory(engine)
+add_subdirectory(io)
 add_subdirectory(tests)
 
 add_executable(orderbook_app main.cpp)
-target_link_libraries(orderbook_app PRIVATE engine)
+target_link_libraries(orderbook_app PRIVATE engine io)
